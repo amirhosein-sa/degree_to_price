@@ -36,8 +36,8 @@ def get_values(price:int):
     values.append([k for k in range(values[-1][-1] + 1,price)])
     limit = (math.ceil(price/360) * 360) - price
     # adding zeros so we can transpose later
-    for ka in range(limit):
-        values[-1].append(0)
+    for _ in range(limit):
+        values[-1].append('-')
     return values
 
 def transpose_values(values:list):
