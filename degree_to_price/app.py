@@ -2,7 +2,9 @@ import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import ttk
 from tkinter.messagebox import *
+
 from tksheet import Sheet
+
 from main import *
 
 
@@ -68,9 +70,14 @@ class App:
         self.submit_values_button.place(x=20, y=145, width=110, height=25)
 
         # prices list
-        self.prices = Sheet(root, show_header=False, show_row_index=False,
+        self.prices = Sheet(root, show_header=False,
+                            row_index=[' ' for i in range(360)],
+                            row_index_width=15,
                             column_width=70,
                             show_top_left=False)
+        self.prices.hide(canvas="row_index")
+        self.prices.enable_bindings("row_select","single_select")
+
         self.prices.change_theme(theme = "light_green")
         self.prices.place(x=135, y=85, width=550, height=366)
 
@@ -79,7 +86,6 @@ class App:
         split_date = start_date_str.split(".")
         is_helio = self.selected_system_var.get()
         price = self.price_value_entry.get()
-        # regex = re.compile("^[\d|.]")
 
         if len(start_date_str) == 0:
             showwarning(title="Start Date Error",message="start date can't be empty !")
@@ -103,6 +109,7 @@ class App:
         prices = get_values(price=int(price))
         self.planet_longitudes.set_sheet_data(data=planet_longitudes)
         self.prices.set_sheet_data(data=add_longitudes(prices,planet_longitudes))
+        self.prices.show(canvas="row_index")
 
 def add_longitudes(values: list,planet_longitudes:list):
     planets = planet_longitudes[0]
@@ -113,10 +120,10 @@ def add_longitudes(values: list,planet_longitudes:list):
         long_index_in_main_list = planet_longitudes[-1].index(long)
         new_planets.append(planets[long_index_in_main_list])
     ceiled_longitudes = [HalfRoundUp(c) for c in sorted_planet_longitudes]
-    lst = ["-" for char in range(360)]
+    planet_longitudes_placeholder = ["-" for char in range(360)]
     for index in range(len(ceiled_longitudes)):
-        lst[ceiled_longitudes[index]] = str(ceiled_longitudes[index]) + " " + str(new_planets[index])
-    values.append(lst)
+        planet_longitudes_placeholder[ceiled_longitudes[index]] = str(ceiled_longitudes[index]) + " " + str(new_planets[index])
+    values.append(planet_longitudes_placeholder)
     transposed_values = transpose_values(values)
     return transposed_values
 

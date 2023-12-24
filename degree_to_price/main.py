@@ -30,8 +30,9 @@ def get_planet_longitudes(is_heliocentric: bool, year: int, month: int, day: int
 
 
 def get_values(price:int):
+    # create 360 element chunks
     values = [[j for j in range(0, i)][-360:] for i in range(360, price, 360)]
-    # adding the rest values
+    # adding the rest values between the last chunk's item till price value
     values.append([k for k in range(values[-1][-1] + 1,price)])
     limit = (math.ceil(price/360) * 360) - price
     # adding zeros so we can transpose later
