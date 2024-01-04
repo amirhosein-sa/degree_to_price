@@ -115,11 +115,17 @@ def add_longitudes(values: list,planet_longitudes:list):
     planets = planet_longitudes[0]
     longitudes = planet_longitudes[-1]
     new_planets = []
+    # sorting longitudes
     sorted_planet_longitudes = sorted(longitudes)
+    # sorting planets based on their longitudes
     for index,long in enumerate(sorted_planet_longitudes):
-        long_index_in_main_list = planet_longitudes[-1].index(long)
-        new_planets.append(planets[long_index_in_main_list])
+        longitude_index_in_main_list = longitudes.index(long)
+        new_planets.append(planets[longitude_index_in_main_list])
+    # rounding
     ceiled_longitudes = [HalfRoundUp(c) for c in sorted_planet_longitudes]
+    # replacing 360 with 0 to resolve the bug [Bug: if a planet degree was 360, app would crash]
+    ceiled_longitudes = [0 if long == 360 else long for long in ceiled_longitudes]
+    # creating a 360 items list from character "-"
     planet_longitudes_placeholder = ["-" for char in range(360)]
     for index in range(len(ceiled_longitudes)):
         planet_longitudes_placeholder[ceiled_longitudes[index]] = str(ceiled_longitudes[index]) + " " + str(new_planets[index])
