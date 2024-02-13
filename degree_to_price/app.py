@@ -11,6 +11,7 @@ from main import *
 class App:
     def __init__(self, root):
         self.selected_system_var = tk.BooleanVar()
+        self.selected_factor_var = tk.IntVar(value=360)
         self.global_background = "#fcf5e1"
         # setting title
         root.title("Degree To Price - by Amirhosein Salari - t.me/amirhosein_sa")
@@ -64,10 +65,25 @@ class App:
         self.helio_radio_button.place(x=20, y=85, width=110, height=25)
         self.geo_radio_button.place(x=20, y=115, width=110, height=25)
 
+
+        tk.Label(root, font=ft, text="Factor:", bg=self.global_background, fg="black",anchor="w").place(x=20, y=150, width=110, height=25)
+
+        # factors
+        factors = (("360", 360),("180", 180),("90",90))
+        self.conj_radio_button = tk.Radiobutton(root,bg=self.global_background,fg="black",borderwidth=0,border=0,
+                                               text=factors[0][0],value=factors[0][1],variable=self.selected_factor_var)
+        self.opp_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
+                                               text=factors[1][0], value=factors[1][1],variable=self.selected_factor_var)
+        self.sq_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
+                                               text=factors[2][0], value=factors[2][1],variable=self.selected_factor_var)
+        self.conj_radio_button.place(x=20,y=180,width=110,height=25)
+        self.opp_radio_button.place(x=20,y=210,width=110,height=25)
+        self.sq_radio_button.place(x=20,y=240,width=110,height=25)
+
         # submit values and get data button
         self.submit_values_button = ttk.Button(root, text="submit values",
                                                command=self.submit_values)
-        self.submit_values_button.place(x=20, y=145, width=110, height=25)
+        self.submit_values_button.place(x=20, y=270, width=110, height=25)
 
         # prices list
         self.prices = Sheet(root, show_header=False,
@@ -86,7 +102,9 @@ class App:
         split_date = start_date_str.split(".")
         is_helio = self.selected_system_var.get()
         price = self.price_value_entry.get()
+        factor = self.selected_factor_var.get()
 
+        # error handling
         if len(start_date_str) == 0:
             showwarning(title="Start Date Error",message="start date can't be empty !")
             return
@@ -106,12 +124,13 @@ class App:
         planet_longitudes = get_planet_longitudes(is_heliocentric=is_helio, year=int(split_date[0]),
                                                   month=int(split_date[1]),
                                                   day=int(split_date[2]))
-        prices = get_values(price=int(price))
+        prices = get_values(price=int(price),factor=factor)
         self.planet_longitudes.set_sheet_data(data=planet_longitudes)
-        self.prices.set_sheet_data(data=add_longitudes(prices,planet_longitudes))
+
+        self.prices.set_sheet_data(data=add_only_planetary_squares(int(price),planet_longitudes,factor))
         self.prices.show(canvas="row_index")
 
-def add_longitudes(values: list,planet_longitudes:list):
+def add_only_planetary_squares(price,planet_longitudes,factor):
     planets = planet_longitudes[0]
     longitudes = planet_longitudes[-1]
     new_planets = []
@@ -125,13 +144,11 @@ def add_longitudes(values: list,planet_longitudes:list):
     ceiled_longitudes = [HalfRoundUp(c) for c in sorted_planet_longitudes]
     # replacing 360 with 0 to resolve the bug [Bug: if a planet degree was 360, app would crash]
     ceiled_longitudes = [0 if long == 360 else long for long in ceiled_longitudes]
-    # creating a 360 items list from character "-"
-    planet_longitudes_placeholder = ["-" for char in range(360)]
-    for index in range(len(ceiled_longitudes)):
-        planet_longitudes_placeholder[ceiled_longitudes[index]] = str(ceiled_longitudes[index]) + " " + str(new_planets[index])
-    values.append(planet_longitudes_placeholder)
-    transposed_values = transpose_values(values)
-    return transposed_values
+    values = get_only_planetary_squares(ceiled_longitudes,price,factor)
+    planet_labels = [str(ceiled_longitudes[index]) + " " + str(new_planets[index]) for index, _ in enumerate(ceiled_longitudes)]
+    values.insert(0,planet_labels)
+    return values
+
 
 if __name__ == "__main__":
     root = tk.Tk()

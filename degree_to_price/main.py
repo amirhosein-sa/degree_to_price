@@ -29,16 +29,23 @@ def get_planet_longitudes(is_heliocentric: bool, year: int, month: int, day: int
     return planet_longitudes
 
 
-def get_values(price:int):
-    # create 360 element chunks
-    values = [[j for j in range(0, i)][-360:] for i in range(360, price, 360)]
+def get_values(price: int, factor:int):
+    # create factor based element chunks
+    values = [[j for j in range(0, i)][-factor:] for i in range(factor, price, factor)]
     # adding the rest values between the last chunk's item till price value
     values.append([k for k in range(values[-1][-1] + 1,price)])
-    limit = (math.ceil(price/360) * 360) - price
-    # adding zeros so we can transpose later
+    limit = (math.ceil(price/factor) * factor) - price
+    # adding - so we can transpose later
     for _ in range(limit):
         values[-1].append('-')
     return values
+
+def get_only_planetary_squares(ceiled_planetary_longitudes:list,price:int,factor:int):
+    limit = math.ceil(price/factor) + 1
+    my_list = []
+    for multiplication_factor in range(1,limit):
+        my_list.append([(multiplication_factor * factor) + long for long in ceiled_planetary_longitudes])
+    return my_list
 
 def transpose_values(values:list):
     transposed = [[row[i] for row in values] for i in range(len(values[0]))]
@@ -46,3 +53,9 @@ def transpose_values(values:list):
 
 def HalfRoundUp(value):
     return int(value + 0.5)
+
+if __name__ == "__main__":
+    malist = [4, 18, 24, 43, 50, 281, 301, 321, 330, 341, 352, 357]
+    herr = get_only_planetary_squares(malist,1000,180)
+    print(herr)
+
