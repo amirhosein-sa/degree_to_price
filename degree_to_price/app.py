@@ -3,6 +3,10 @@ import tkinter.font as tkFont
 from tkinter import ttk
 from tkinter.messagebox import *
 
+import mplcursors
+import numpy as np
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.figure import Figure
 from tksheet import Sheet
 
 from main import *
@@ -10,6 +14,7 @@ from main import *
 
 class App:
     def __init__(self, root):
+        self.longitude_equivalents = None
         self.selected_system_var = tk.BooleanVar()
         self.selected_factor_var = tk.IntVar(value=360)
         self.global_background = "#fcf5e1"
@@ -118,7 +123,7 @@ class App:
             showwarning(title="Price Value Error", message="price must be digits only !")
             return
         elif int(price) <= 360:
-            showwarning(title="Price Value Error", message="price must greater than 360 !")
+            showwarning(title="Price Value Error", message="price must be greater than 360 !")
             return
 
         planet_longitudes = get_planet_longitudes(is_heliocentric=is_helio, year=int(split_date[0]),
@@ -127,28 +132,61 @@ class App:
         prices = get_values(price=int(price),factor=factor)
         self.planet_longitudes.set_sheet_data(data=planet_longitudes)
 
-        self.prices.set_sheet_data(data=add_only_planetary_squares(int(price),planet_longitudes,factor))
+        self.prices.set_sheet_data(data=self.add_only_planetary_squares(int(price), planet_longitudes, factor))
         self.prices.show(canvas="row_index")
+        self.show_chart()
 
-def add_only_planetary_squares(price,planet_longitudes,factor):
-    planets = planet_longitudes[0]
-    longitudes = planet_longitudes[-1]
-    new_planets = []
-    # sorting longitudes
-    sorted_planet_longitudes = sorted(longitudes)
-    # sorting planets based on their longitudes
-    for index,long in enumerate(sorted_planet_longitudes):
-        longitude_index_in_main_list = longitudes.index(long)
-        new_planets.append(planets[longitude_index_in_main_list])
-    # rounding
-    ceiled_longitudes = [HalfRoundUp(c) for c in sorted_planet_longitudes]
-    # replacing 360 with 0 to resolve the bug [Bug: if a planet degree was 360, app would crash]
-    ceiled_longitudes = [0 if long == 360 else long for long in ceiled_longitudes]
-    values = get_only_planetary_squares(ceiled_longitudes,price,factor)
-    planet_labels = [str(ceiled_longitudes[index]) + " " + str(new_planets[index]) for index, _ in enumerate(ceiled_longitudes)]
-    values.insert(0,planet_labels)
-    return values
+    def show_chart(self):
 
+        flatted_data = [val for sublist in self.longitude_equivalents for val in sublist]
+        unique_values, counts = np.unique(flatted_data, return_counts=True)
+
+        fig = Figure(figsize=(6, 4), dpi=100)
+        plot = fig.add_subplot(1, 1, 1)
+
+        # Plot the data
+        bars = plot.bar(unique_values, counts)
+        plot.set_ylabel('Occurrences')
+        plot.set_title('Occurrences of prices')
+
+        def on_add(sel):
+            x = sel.target.index
+            annotation_text = f'{unique_values[x]}' if isinstance(x, int) else f'{unique_values[x[0]]}'
+            sel.annotation.set_text(annotation_text)
+
+        cursor = mplcursors.cursor(bars)
+        cursor.connect("add", on_add)
+
+
+        new_window = tk.Toplevel()
+        new_window.title("Chart Window")
+
+        canvas = FigureCanvasTkAgg(fig, master=new_window)
+        canvas.draw()
+        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
+
+        # Start the Tkinter event loop for the new window
+        new_window.mainloop()
+
+    def add_only_planetary_squares(self,price, planet_longitudes, factor):
+        planets = planet_longitudes[0]
+        longitudes = planet_longitudes[-1]
+        new_planets = []
+        # sorting longitudes
+        sorted_planet_longitudes = sorted(longitudes)
+        # sorting planets based on their longitudes
+        for index,long in enumerate(sorted_planet_longitudes):
+            longitude_index_in_main_list = longitudes.index(long)
+            new_planets.append(planets[longitude_index_in_main_list])
+        # rounding
+        ceiled_longitudes = [HalfRoundUp(c) for c in sorted_planet_longitudes]
+        # replacing 360 with 0 to resolve the bug [Bug: if a planet degree was 360, app would crash]
+        ceiled_longitudes = [0 if long == 360 else long for long in ceiled_longitudes]
+        values = get_only_planetary_squares(ceiled_longitudes,price,factor)
+        self.longitude_equivalents = get_only_planetary_squares(ceiled_longitudes,price,factor)
+        planet_labels = [str(ceiled_longitudes[index]) + " " + str(new_planets[index]) for index, _ in enumerate(ceiled_longitudes)]
+        values.insert(0,planet_labels)
+        return values
 
 if __name__ == "__main__":
     root = tk.Tk()
