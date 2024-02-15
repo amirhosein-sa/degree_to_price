@@ -8,7 +8,7 @@ import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tksheet import Sheet
 
-from degree_to_price.Cursor import Cursor
+from Cursor import Cursor
 from main import *
 
 
@@ -74,7 +74,7 @@ class App:
         tk.Label(root, font=ft, text="Factor:", bg=self.global_background, fg="black",anchor="w").place(x=20, y=150, width=110, height=25)
 
         # factors
-        factors = (("360", 360),("180", 180),("90",90))
+        factors = (("Conj(360)", 360),("Opp(180)", 180),("Sq(90)",90))
         self.conj_radio_button = tk.Radiobutton(root,bg=self.global_background,fg="black",borderwidth=0,border=0,
                                                text=factors[0][0],value=factors[0][1],variable=self.selected_factor_var)
         self.opp_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
@@ -137,7 +137,7 @@ class App:
         flatted_data = [val for sublist in self.longitude_equivalents for val in sublist]
         unique_values, counts = np.unique(flatted_data, return_counts=True)
         fig,ax = plt.subplots()
-        ax.set_title('Planetary price frequency')
+        ax.set_title(f'Planetary price frequency (factor: {self.selected_factor_var.get()}, mode: {get_selected_system(self.selected_system_var.get())})')
         ax.bar(unique_values, counts)
         ax.set_xlabel('Prices')
         ax.set_ylabel('frequency')
@@ -175,6 +175,9 @@ class App:
         planet_labels = [str(ceiled_longitudes[index]) + " " + str(new_planets[index]) for index, _ in enumerate(ceiled_longitudes)]
         values.insert(0,planet_labels)
         return values
+
+def get_selected_system(value:bool):
+    return "Helio" if value else "Geo"
 
 if __name__ == "__main__":
     root = tk.Tk()

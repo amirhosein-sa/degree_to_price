@@ -54,8 +54,5 @@ def transpose_values(values:list):
 def HalfRoundUp(value):
     return int(value + 0.5)
 
-if __name__ == "__main__":
-    malist = [4, 18, 24, 43, 50, 281, 301, 321, 330, 341, 352, 357]
-    herr = get_only_planetary_squares(malist,1000,180)
-    print(herr)
+
 
