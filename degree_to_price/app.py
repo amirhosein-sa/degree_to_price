@@ -3,12 +3,12 @@ import tkinter.font as tkFont
 from tkinter import ttk
 from tkinter.messagebox import *
 
-import mplcursors
+import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-from matplotlib.figure import Figure
 from tksheet import Sheet
 
+from degree_to_price.Cursor import Cursor
 from main import *
 
 
@@ -119,17 +119,13 @@ class App:
         if len(price) == 0:
             showwarning(title="Price Value Error", message="price can't be empty !")
             return
-        if not price.isdigit():
+        elif not price.isdigit():
             showwarning(title="Price Value Error", message="price must be digits only !")
-            return
-        elif int(price) <= 360:
-            showwarning(title="Price Value Error", message="price must be greater than 360 !")
             return
 
         planet_longitudes = get_planet_longitudes(is_heliocentric=is_helio, year=int(split_date[0]),
                                                   month=int(split_date[1]),
                                                   day=int(split_date[2]))
-        prices = get_values(price=int(price),factor=factor)
         self.planet_longitudes.set_sheet_data(data=planet_longitudes)
 
         self.prices.set_sheet_data(data=self.add_only_planetary_squares(int(price), planet_longitudes, factor))
@@ -140,22 +136,14 @@ class App:
 
         flatted_data = [val for sublist in self.longitude_equivalents for val in sublist]
         unique_values, counts = np.unique(flatted_data, return_counts=True)
+        fig,ax = plt.subplots()
+        ax.set_title('Planetary price frequency')
+        ax.bar(unique_values, counts)
+        ax.set_xlabel('Prices')
+        ax.set_ylabel('frequency')
 
-        fig = Figure(figsize=(6, 4), dpi=100)
-        plot = fig.add_subplot(1, 1, 1)
-
-        # Plot the data
-        bars = plot.bar(unique_values, counts)
-        plot.set_ylabel('Occurrences')
-        plot.set_title('Occurrences of prices')
-
-        def on_add(sel):
-            x = sel.target.index
-            annotation_text = f'{unique_values[x]}' if isinstance(x, int) else f'{unique_values[x[0]]}'
-            sel.annotation.set_text(annotation_text)
-
-        cursor = mplcursors.cursor(bars)
-        cursor.connect("add", on_add)
+        cursor = Cursor(ax)
+        fig.canvas.mpl_connect('motion_notify_event', cursor.on_mouse_move)
 
 
         new_window = tk.Toplevel()
