@@ -53,6 +53,3 @@ def transpose_values(values:list):
 
 def HalfRoundUp(value):
     return int(value + 0.5)
-
-
-

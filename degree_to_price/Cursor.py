@@ -28,5 +28,5 @@ class Cursor:
             self.horizontal_line.set_ydata([y])
             self.vertical_line.set_xdata([x])
             # show only price in upper right
-            self.text.set_text(f'price={x:1.2f}')
+            self.text.set_text(f'price={x}')
             self.ax.figure.canvas.draw()

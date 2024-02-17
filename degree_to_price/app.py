@@ -1,14 +1,11 @@
+import os
 import tkinter as tk
 import tkinter.font as tkFont
 from tkinter import ttk
 from tkinter.messagebox import *
 
-import matplotlib.pyplot as plt
-import numpy as np
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tksheet import Sheet
 
-from Cursor import Cursor
 from main import *
 
 
@@ -59,6 +56,24 @@ class App:
         self.price_value_entry["text"] = "Price"
         self.price_value_entry.place(x=60, y=50, width=70, height=25)
 
+        tk.Label(root, font=ft, text="upper lim", bg=self.global_background, fg="black").place(x=20, y=85, width=60,
+                                                                                               height=25)
+        # indicator upper limit value entry
+        self.upper_lim_value_entry = ttk.Entry(root)
+        ft = tkFont.Font(family='Times', size=10)
+        self.upper_lim_value_entry["font"] = ft
+        self.upper_lim_value_entry["justify"] = "left"
+        self.upper_lim_value_entry.place(x=85, y=85, width=45, height=25)
+
+        tk.Label(root, font=ft, text="lower lim", bg=self.global_background, fg="black", ).place(x=20, y=115, width=60,
+                                                                                                 height=25)
+        # indicator lower limit value entry
+        self.lower_lim_value_entry = ttk.Entry(root)
+        ft = tkFont.Font(family='Times', size=10)
+        self.lower_lim_value_entry["font"] = ft
+        self.lower_lim_value_entry["justify"] = "left"
+        self.lower_lim_value_entry.place(x=85, y=115, width=45, height=25)
+
         # heliocentric/ geocentric radio buttons
         systems = (("helio", True), ("geo", False))
         self.helio_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
@@ -67,11 +82,12 @@ class App:
         self.geo_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
                                                text=systems[1][0], value=systems[1][1],
                                                variable=self.selected_system_var)
-        self.helio_radio_button.place(x=20, y=85, width=110, height=25)
-        self.geo_radio_button.place(x=20, y=115, width=110, height=25)
+        self.helio_radio_button.place(x=20, y=145, width=110, height=25)
+        self.geo_radio_button.place(x=20, y=175, width=110, height=25)
 
-
-        tk.Label(root, font=ft, text="Factor:", bg=self.global_background, fg="black",anchor="w").place(x=20, y=150, width=110, height=25)
+        tk.Label(root, font=ft, text="Factor:", bg=self.global_background, fg="black", anchor="w").place(x=20, y=205,
+                                                                                                         width=110,
+                                                                                                         height=25)
 
         # factors
         factors = (("Conj(360)", 360),("Opp(180)", 180),("Sq(90)",90))
@@ -81,14 +97,14 @@ class App:
                                                text=factors[1][0], value=factors[1][1],variable=self.selected_factor_var)
         self.sq_radio_button = tk.Radiobutton(root, bg=self.global_background, fg="black", borderwidth=0, border=0,
                                                text=factors[2][0], value=factors[2][1],variable=self.selected_factor_var)
-        self.conj_radio_button.place(x=20,y=180,width=110,height=25)
-        self.opp_radio_button.place(x=20,y=210,width=110,height=25)
-        self.sq_radio_button.place(x=20,y=240,width=110,height=25)
+        self.conj_radio_button.place(x=20, y=235, width=110, height=25)
+        self.opp_radio_button.place(x=20, y=265, width=110, height=25)
+        self.sq_radio_button.place(x=20, y=295, width=110, height=25)
 
-        # submit values and get data button
+        # submit values
         self.submit_values_button = ttk.Button(root, text="submit values",
                                                command=self.submit_values)
-        self.submit_values_button.place(x=20, y=270, width=110, height=25)
+        self.submit_values_button.place(x=20, y=325, width=110, height=25)
 
         # prices list
         self.prices = Sheet(root, show_header=False,
@@ -108,6 +124,8 @@ class App:
         is_helio = self.selected_system_var.get()
         price = self.price_value_entry.get()
         factor = self.selected_factor_var.get()
+        upper_limit = self.upper_lim_value_entry.get()
+        lower_limit = self.lower_lim_value_entry.get()
 
         # error handling
         if len(start_date_str) == 0:
@@ -116,11 +134,11 @@ class App:
         if not re.fullmatch(r"^[\d|.]+", start_date_str):
             showwarning(title="Start Date Error", message="start date can only contain digits and dot (.) character")
             return
-        if len(price) == 0:
-            showwarning(title="Price Value Error", message="price can't be empty !")
+        if len(price) == 0 or len(upper_limit) == 0 or len(lower_limit) == 0:
+            showwarning(title="Price Value Error", message="Fill in all price fields !")
             return
-        elif not price.isdigit():
-            showwarning(title="Price Value Error", message="price must be digits only !")
+        elif not price.isdigit() or not upper_limit.isdigit() or not lower_limit.isdigit():
+            showwarning(title="Price Value Error", message="price fields must be digits only !")
             return
 
         planet_longitudes = get_planet_longitudes(is_heliocentric=is_helio, year=int(split_date[0]),
@@ -130,31 +148,22 @@ class App:
 
         self.prices.set_sheet_data(data=self.add_only_planetary_squares(int(price), planet_longitudes, factor))
         self.prices.show(canvas="row_index")
-        self.show_chart()
+        self.export_indicator()
 
-    def show_chart(self):
-
+    def export_indicator(self):
         flatted_data = [val for sublist in self.longitude_equivalents for val in sublist]
-        unique_values, counts = np.unique(flatted_data, return_counts=True)
-        fig,ax = plt.subplots()
-        ax.set_title(f'Planetary price frequency (factor: {self.selected_factor_var.get()}, mode: {get_selected_system(self.selected_system_var.get())})')
-        ax.bar(unique_values, counts)
-        ax.set_xlabel('Prices')
-        ax.set_ylabel('frequency')
+        upper_limit = int(self.upper_lim_value_entry.get())
+        lower_limit = int(self.lower_lim_value_entry.get())
+        values_in_range = [x for x in flatted_data if lower_limit <= x <= upper_limit]
+        indicator_placeholder = f"//@version=5\nindicator(\"Degree to Price-{self.start_date_entry.get()}-{get_selected_system(self.selected_system_var.get())}\", overlay = true)"
+        for index, long_equal in enumerate(values_in_range):
+            indicator_placeholder += f"\nval{index} = input.float(title = \"value {index}\", defval = {long_equal}, step = 0.01)\nplot( val{index} , title = \"Degree to Price\", color = color.white, show_last=1, linewidth = 2, trackprice=true)"
+        if os.path.exists("indicator.txt"):
+            os.remove("indicator.txt")
+        with open('indicator.txt', 'w') as f:
+            f.write(indicator_placeholder)
+            f.close()
 
-        cursor = Cursor(ax)
-        fig.canvas.mpl_connect('motion_notify_event', cursor.on_mouse_move)
-
-
-        new_window = tk.Toplevel()
-        new_window.title("Chart Window")
-
-        canvas = FigureCanvasTkAgg(fig, master=new_window)
-        canvas.draw()
-        canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
-        # Start the Tkinter event loop for the new window
-        new_window.mainloop()
 
     def add_only_planetary_squares(self,price, planet_longitudes, factor):
         planets = planet_longitudes[0]
